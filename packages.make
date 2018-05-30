@@ -108,23 +108,22 @@ package-contrail: source-package-contrail
 	 fakeroot debian/rules.modules KVERS=$(KVERS) binary-modules
 	)
 
-source-package-contrail: prepare-contrail
+source-package-contrail: prepare-contrail debian-contrail
 	$(eval PACKAGE := contrail)
 	@echo "Building source package $(PACKAGE)"
-	(
-	 cd build/packages/$(PACKAGE) &&
-	 dch -v "$(CONTRAIL_VERSION)" -m "" &&
-	 dch --release --distribution $(SERIES) -m "Releasing version $(CONTRAIL_VERSION)" &&
-	 debuild -us -uc -S -rfakeroot
-	)
+	cd build/packages/$(PACKAGE) && \
+	dch -v "$(CONTRAIL_VERSION)" -m "" && \
+	dch --release --distribution $(SERIES) -m "Releasing version $(CONTRAIL_VERSION)" && \
+	debuild -us -uc -S -rfakeroot
 
-prepare-contrail: clean-contrail
+prepare-contrail: clean-contrail 
 	$(eval PACKAGE := contrail)
 	@echo "Preparing build environment for package $(PACKAGE)"
-	(
-	  ln -sf $(PWD) build/packages/$(PACKAGE) &&
-	  cp -R tools/packages/debian/$(PACKAGE)/debian .
-	)
+	mkdir -p build/packages/$(PACKAGE)
+	cp -R $(CURDIR)/vrouter build/packages/$(PACKAGE)
+	cp -R tools/packages/debian/$(PACKAGE)/debian build/packages/$(PACKAGE)
+	tar zcf build/packages/contrail_$(CONTRAIL_VERSION).orig.tar.gz $(SOURCE_CONTRAIL_ARCHIVE)
+	
 
 source-ifmap-server:
 	$(eval PACKAGE := ifmap-server)
@@ -217,6 +216,7 @@ package-%: debian-%
 
 debian-%:
 	$(eval PACKAGE := $(patsubst debian-%,%,$@))
+	@echo "Creating dir src/build/packages/$(PACKAGES)"
 	mkdir -p build/packages/$(PACKAGE)
 	cp -R tools/packages/debian/$(PACKAGE)/debian build/packages/$(PACKAGE)
 	cp -R tools/packages/utils build/packages/$(PACKAGE)/debian/
